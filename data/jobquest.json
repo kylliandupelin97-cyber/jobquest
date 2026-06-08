@@ -1,0 +1,113 @@
+{
+  "users": [
+    {
+      "id": "81b2557f-76d9-4229-a249-13006c6b74fe",
+      "created_at": "2026-06-07T12:04:07.732Z",
+      "username": "AdminDev",
+      "email": "admin@jobquest.app",
+      "password": "$2b$10$i5KH3nF3GqkfPceNZE5u4uxa351zkoe3pJeqTupXqXYpuyZ7tTa4.",
+      "is_admin": true,
+      "is_certified": true,
+      "can_live": true,
+      "can_color": true,
+      "rank": 0,
+      "avg_rating": 5,
+      "total_earned": 0,
+      "wallet": 0,
+      "badges": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8"
+      ],
+      "profile_color": "#00ff88",
+      "geo_allowed": true,
+      "location": null
+    },
+    {
+      "id": "62784b76-cfcc-45df-8e0e-8fe77eae765c",
+      "created_at": "2026-06-07T12:04:14.812Z",
+      "username": "TestUser",
+      "email": "test@test.com",
+      "password": "$2b$10$M0ncKlBKHz1DeBcPyxidIOQTCmKlOOuRYf.y48KlM/Shua8d8NBmW",
+      "is_admin": false,
+      "is_certified": false,
+      "can_live": false,
+      "can_color": false,
+      "in_top100": false,
+      "rank": 9999,
+      "avg_rating": 0,
+      "rating_count": 0,
+      "total_earned": 0,
+      "wallet": 0,
+      "wallet_cash": 0,
+      "badges": [],
+      "profile_color": "#ffffff",
+      "geo_allowed": true,
+      "location": null,
+      "bio": "",
+      "avatar_color": "hsl(21,60%,50%)"
+    }
+  ],
+  "missions": [],
+  "applications": [],
+  "messages": [],
+  "conversations": [],
+  "ratings": [],
+  "transactions": [],
+  "notifications": [],
+  "badges": [
+    {
+      "id": "b1",
+      "icon": "🦁",
+      "name": "Lion",
+      "req_rank": 100
+    },
+    {
+      "id": "b2",
+      "icon": "🦅",
+      "name": "Aigle",
+      "req_rank": 100
+    },
+    {
+      "id": "b3",
+      "icon": "🐬",
+      "name": "Dauphin",
+      "req_rank": 100
+    },
+    {
+      "id": "b4",
+      "icon": "🐯",
+      "name": "Tigre",
+      "req_rank": 50
+    },
+    {
+      "id": "b5",
+      "icon": "🐉",
+      "name": "Dragon",
+      "req_rank": 50
+    },
+    {
+      "id": "b6",
+      "icon": "🌟",
+      "name": "Étoile",
+      "req_rank": 10
+    },
+    {
+      "id": "b7",
+      "icon": "🦊",
+      "name": "Renard",
+      "req_rank": 100
+    },
+    {
+      "id": "b8",
+      "icon": "🦋",
+      "name": "Papillon",
+      "req_rank": 100
+    }
+  ]
+}
