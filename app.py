@@ -890,4 +890,4 @@ if __name__ == "__main__":
 ║   http://localhost:{PORT}                      ║
 ╚══════════════════════════════════════════════╝
 """)
-    app.run(host="0.0.0.0", port=PORT, debug=DEBUG)
+   app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=False)
