@@ -12,7 +12,7 @@ from flask_cors import CORS
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
 BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
-DB_PATH     = os.path.join(BASE_DIR, "../db/jobquest.db")
+DB_PATH     = os.path.join(BASE_DIR, "jobquest.db")
 SECRET_KEY  = os.environ.get("JWT_SECRET", "jobquest_super_secret_key_2026_change_in_prod")
 JWT_EXPIRY  = int(os.environ.get("JWT_EXPIRY_HOURS", 72))
 PORT        = int(os.environ.get("PORT", 5000))
@@ -114,11 +114,11 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * 2 * math.asin(math.sqrt(a))
 
 # ─── ROUTES : SANTÉ ───────────────────────────────────────────────────────────
-@app.get("/")
+@app.get("/api")
 def root():
     return ok({"server": "JOBQUEST API", "version": "1.0.0", "status": "running"})
 
-@app.get("/health")
+@app.get("/api/health")
 def health():
     try:
         db_fetchone("SELECT 1")
@@ -127,7 +127,7 @@ def health():
         return jsonify({"db": "error", "detail": str(e)}), 500
 
 # ─── ROUTES : AUTH ────────────────────────────────────────────────────────────
-@app.post("/auth/register")
+@app.post("/api/auth/register")
 def register():
     d = request.json or {}
     username = (d.get("username") or "").strip()
@@ -158,7 +158,7 @@ def register():
     token = make_token(uid, "user")
     return ok({"user": user, "token": token}, "Compte créé avec succès"), 201
 
-@app.post("/auth/login")
+@app.post("/api/auth/login")
 def login():
     d = request.json or {}
     email    = (d.get("email") or "").strip().lower()
@@ -179,7 +179,7 @@ def login():
     safe = {k: v for k, v in user.items() if k != "password_hash"}
     return ok({"user": safe, "token": token})
 
-@app.get("/auth/me")
+@app.get("/api/auth/me")
 @token_required
 def me():
     user = db_fetchone("SELECT * FROM users WHERE id=?", (g.user_id,))
@@ -195,7 +195,7 @@ def me():
     return ok({"user": safe, "badges": badges, "settings": settings})
 
 # ─── ROUTES : USERS ───────────────────────────────────────────────────────────
-@app.get("/users/<uid>")
+@app.get("/api/users/<uid>")
 @token_required
 def get_user(uid):
     user = db_fetchone("""
@@ -216,7 +216,7 @@ def get_user(uid):
     """, (uid,))
     return ok({"user": user, "badges": badges, "ratings": ratings})
 
-@app.patch("/users/me")
+@app.patch("/api/users/me")
 @token_required
 def update_me():
     d = request.json or {}
@@ -237,7 +237,7 @@ def update_me():
     db_run(f"UPDATE users SET {sets}, updated_at=? WHERE id=?", vals)
     return ok(msg="Profil mis à jour")
 
-@app.patch("/users/me/password")
+@app.patch("/api/users/me/password")
 @token_required
 def change_password():
     d = request.json or {}
@@ -254,7 +254,7 @@ def change_password():
     return ok(msg="Mot de passe modifié")
 
 # ─── ROUTES : MISSIONS ────────────────────────────────────────────────────────
-@app.get("/missions")
+@app.get("/api/missions")
 @token_required
 def list_missions():
     lat  = request.args.get("lat", type=float)
@@ -295,7 +295,7 @@ def list_missions():
 
     return ok(missions, total=len(missions))
 
-@app.get("/missions/<mid>")
+@app.get("/api/missions/<mid>")
 @token_required
 def get_mission(mid):
     m = db_fetchone("""
@@ -314,7 +314,7 @@ def get_mission(mid):
     """, (mid,))
     return ok({"mission": m, "applications": apps})
 
-@app.post("/missions")
+@app.post("/api/missions")
 @token_required
 def create_mission():
     d = request.json or {}
@@ -337,7 +337,7 @@ def create_mission():
     m = db_fetchone("SELECT * FROM missions WHERE id=?", (mid,))
     return ok(m, "Mission publiée"), 201
 
-@app.patch("/missions/<mid>")
+@app.patch("/api/missions/<mid>")
 @token_required
 def update_mission(mid):
     m = db_fetchone("SELECT * FROM missions WHERE id=?", (mid,))
@@ -360,7 +360,7 @@ def update_mission(mid):
     db_run(f"UPDATE missions SET {sets}, updated_at=? WHERE id=?", vals)
     return ok(msg="Mission mise à jour")
 
-@app.delete("/missions/<mid>")
+@app.delete("/api/missions/<mid>")
 @token_required
 def delete_mission(mid):
     m = db_fetchone("SELECT owner_id FROM missions WHERE id=?", (mid,))
@@ -372,7 +372,7 @@ def delete_mission(mid):
     return ok(msg="Mission annulée")
 
 # ─── ROUTES : CANDIDATURES ────────────────────────────────────────────────────
-@app.post("/missions/<mid>/apply")
+@app.post("/api/missions/<mid>/apply")
 @token_required
 def apply_mission(mid):
     m = db_fetchone("SELECT * FROM missions WHERE id=? AND available=1", (mid,))
@@ -419,7 +419,7 @@ def apply_mission(mid):
 
     return ok({"application_id": aid}, "Candidature envoyée"), 201
 
-@app.post("/applications/<aid>/accept")
+@app.post("/api/applications/<aid>/accept")
 @token_required
 def accept_application(aid):
     app_row = db_fetchone("SELECT * FROM applications WHERE id=?", (aid,))
@@ -454,7 +454,7 @@ def accept_application(aid):
     return ok(msg="Candidature acceptée — conversation déverrouillée")
 
 # ─── ROUTES : MESSAGES ────────────────────────────────────────────────────────
-@app.get("/conversations")
+@app.get("/api/conversations")
 @token_required
 def get_conversations():
     convs = db_fetchall("""
@@ -470,7 +470,7 @@ def get_conversations():
     """, (g.user_id, g.user_id))
     return ok(convs)
 
-@app.get("/conversations/<cid>/messages")
+@app.get("/api/conversations/<cid>/messages")
 @token_required
 def get_messages(cid):
     conv = db_fetchone("SELECT * FROM conversations WHERE id=?", (cid,))
@@ -489,7 +489,7 @@ def get_messages(cid):
            (cid, g.user_id))
     return ok({"conversation": conv, "messages": msgs})
 
-@app.post("/conversations/<cid>/messages")
+@app.post("/api/conversations/<cid>/messages")
 @token_required
 def send_message(cid):
     conv = db_fetchone("SELECT * FROM conversations WHERE id=?", (cid,))
@@ -515,7 +515,7 @@ def send_message(cid):
     return ok({"message_id": mid}, "Message envoyé"), 201
 
 # ─── ROUTES : NOTES ───────────────────────────────────────────────────────────
-@app.post("/users/<uid>/rate")
+@app.post("/api/users/<uid>/rate")
 @token_required
 def rate_user(uid):
     if uid == g.user_id:
@@ -561,7 +561,7 @@ def _recalculate_ranking():
     db.commit()
 
 # ─── ROUTES : CLASSEMENT ─────────────────────────────────────────────────────
-@app.get("/ranking")
+@app.get("/api/ranking")
 @token_required
 def get_ranking():
     top = request.args.get("top", 100, type=int)
@@ -583,7 +583,7 @@ def get_ranking():
     return ok(users)
 
 # ─── ROUTES : PORTE-MONNAIE ───────────────────────────────────────────────────
-@app.get("/wallet")
+@app.get("/api/wallet")
 @token_required
 def get_wallet():
     user = db_fetchone("SELECT wallet_balance, cash_balance FROM users WHERE id=?", (g.user_id,))
@@ -595,7 +595,7 @@ def get_wallet():
     return ok({"balance": user["wallet_balance"], "cash": user["cash_balance"],
                "transactions": transactions})
 
-@app.post("/wallet/withdraw")
+@app.post("/api/wallet/withdraw")
 @token_required
 def withdraw():
     d = request.json or {}
@@ -618,7 +618,7 @@ def withdraw():
     """, (tid, g.user_id, amount, method, f"Retrait via {method}"))
     return ok({"transaction_id": tid}, f"Retrait de {amount}€ effectué")
 
-@app.post("/wallet/cash-declare")
+@app.post("/api/wallet/cash-declare")
 @token_required
 def declare_cash():
     d = request.json or {}
@@ -644,7 +644,7 @@ def declare_cash():
     return ok(msg=f"{amount}€ enregistrés en espèces")
 
 # ─── ROUTES : NOTIFICATIONS ───────────────────────────────────────────────────
-@app.get("/notifications")
+@app.get("/api/notifications")
 @token_required
 def get_notifications():
     notifs = db_fetchall("""
@@ -656,12 +656,12 @@ def get_notifications():
     return ok({"notifications": notifs, "unread": unread})
 
 # ─── ROUTES : BADGES ──────────────────────────────────────────────────────────
-@app.get("/badges")
+@app.get("/api/badges")
 @token_required
 def list_badges():
     return ok(db_fetchall("SELECT * FROM badges ORDER BY required_rank ASC"))
 
-@app.post("/badges/<bid>/equip")
+@app.post("/api/badges/<bid>/equip")
 @token_required
 def equip_badge(bid):
     ub = db_fetchone("SELECT * FROM user_badges WHERE user_id=? AND badge_id=?",
@@ -673,12 +673,12 @@ def equip_badge(bid):
     return ok(msg="Badge mis à jour")
 
 # ─── ROUTES : SETTINGS ────────────────────────────────────────────────────────
-@app.get("/settings")
+@app.get("/api/settings")
 @token_required
 def get_settings():
     return ok(db_fetchone("SELECT * FROM user_settings WHERE user_id=?", (g.user_id,)))
 
-@app.patch("/settings")
+@app.patch("/api/settings")
 @token_required
 def update_settings():
     d = request.json or {}
@@ -694,7 +694,7 @@ def update_settings():
     return ok(msg="Paramètres mis à jour")
 
 # ─── ROUTES : LIVES ───────────────────────────────────────────────────────────
-@app.get("/lives")
+@app.get("/api/lives")
 @token_required
 def get_lives():
     return ok(db_fetchall("""
@@ -703,7 +703,7 @@ def get_lives():
         WHERE l.status='live' ORDER BY l.viewers DESC
     """))
 
-@app.post("/lives/start")
+@app.post("/api/lives/start")
 @token_required
 def start_live():
     user = db_fetchone("SELECT ranking_pos FROM users WHERE id=?", (g.user_id,))
@@ -716,14 +716,14 @@ def start_live():
     """, (lid, g.user_id, (request.json or {}).get("title","Live")))
     return ok({"live_id": lid}, "Live démarré"), 201
 
-@app.post("/lives/<lid>/end")
+@app.post("/api/lives/<lid>/end")
 @token_required
 def end_live(lid):
     db_run("UPDATE lives SET status='ended', ended_at=? WHERE id=? AND host_id=?",
            (now(), lid, g.user_id))
     return ok(msg="Live terminé")
 
-@app.post("/lives/<lid>/like")
+@app.post("/api/lives/<lid>/like")
 @token_required
 def like_live(lid):
     try:
@@ -735,7 +735,7 @@ def like_live(lid):
     return ok(msg="Mis à jour")
 
 # ─── ADMIN ROUTES ─────────────────────────────────────────────────────────────
-@app.get("/admin/dashboard")
+@app.get("/api/admin/dashboard")
 @admin_required
 def admin_dashboard():
     stats = {
@@ -756,7 +756,7 @@ def admin_dashboard():
     """)
     return ok({"stats": stats, "recent_users": recent_users})
 
-@app.get("/admin/users")
+@app.get("/api/admin/users")
 @admin_required
 def admin_users():
     page   = request.args.get("page", 1, type=int)
@@ -776,7 +776,7 @@ def admin_users():
     total = db_fetchone("SELECT COUNT(*) as n FROM users")["n"]
     return ok(users, total=total, page=page)
 
-@app.patch("/admin/users/<uid>")
+@app.patch("/api/admin/users/<uid>")
 @admin_required
 def admin_update_user(uid):
     d = request.json or {}
@@ -795,7 +795,7 @@ def admin_update_user(uid):
     """, (lid, g.user_id, uid, json.dumps(updates)))
     return ok(msg="Utilisateur mis à jour")
 
-@app.delete("/admin/users/<uid>")
+@app.delete("/api/admin/users/<uid>")
 @admin_required
 def admin_ban_user(uid):
     db_run("UPDATE users SET is_active=0, updated_at=? WHERE id=?", (now(), uid))
@@ -806,7 +806,7 @@ def admin_ban_user(uid):
     """, (lid, g.user_id, uid, "Compte désactivé par admin"))
     return ok(msg="Utilisateur banni")
 
-@app.get("/admin/missions")
+@app.get("/api/admin/missions")
 @admin_required
 def admin_missions():
     missions = db_fetchall("""
@@ -816,13 +816,13 @@ def admin_missions():
     """)
     return ok(missions)
 
-@app.delete("/admin/missions/<mid>")
+@app.delete("/api/admin/missions/<mid>")
 @admin_required
 def admin_delete_mission(mid):
     db_run("UPDATE missions SET status='cancelled' WHERE id=?", (mid,))
     return ok(msg="Mission annulée")
 
-@app.get("/admin/ratings")
+@app.get("/api/admin/ratings")
 @admin_required
 def admin_ratings():
     ratings = db_fetchall("""
@@ -834,7 +834,7 @@ def admin_ratings():
     """)
     return ok(ratings)
 
-@app.delete("/admin/ratings/<rid>")
+@app.delete("/api/admin/ratings/<rid>")
 @admin_required
 def admin_delete_rating(rid):
     r = db_fetchone("SELECT to_user_id FROM ratings WHERE id=?", (rid,))
@@ -849,7 +849,7 @@ def admin_delete_rating(rid):
     _recalculate_ranking()
     return ok(msg="Note supprimée")
 
-@app.get("/admin/logs")
+@app.get("/api/admin/logs")
 @admin_required
 def admin_logs():
     logs = db_fetchall("""
@@ -859,7 +859,7 @@ def admin_logs():
     """)
     return ok(logs)
 
-@app.post("/admin/badges/grant")
+@app.post("/api/admin/badges/grant")
 @admin_required
 def admin_grant_badge():
     d = request.json or {}
@@ -890,4 +890,83 @@ if __name__ == "__main__":
 ║   http://localhost:{PORT}                      ║
 ╚══════════════════════════════════════════════╝
 """)
-app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=False)
+    app.run(host="0.0.0.0", port=PORT, debug=DEBUG)
+
+
+# ─── INIT DB AUTO ─────────────────────────────────────────────────────────────
+def init_db():
+    db = sqlite3.connect(DB_PATH)
+    db.execute("PRAGMA journal_mode=WAL")
+    db.execute("PRAGMA foreign_keys=ON")
+    db.executescript("""
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL, email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL, role TEXT DEFAULT 'user', bio TEXT DEFAULT '',
+            avatar_url TEXT, pseudo_color TEXT DEFAULT '#00ff88', ranking_pos INTEGER DEFAULT 9999,
+            stars_avg REAL DEFAULT 0, stars_count INTEGER DEFAULT 0, certified INTEGER DEFAULT 0,
+            wallet_balance REAL DEFAULT 0, geolocation_allowed INTEGER DEFAULT 0,
+            latitude REAL, longitude REAL, can_live INTEGER DEFAULT 0,
+            is_active INTEGER DEFAULT 1, created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')), last_seen TEXT
+        );
+        CREATE TABLE IF NOT EXISTS user_settings (
+            user_id TEXT PRIMARY KEY, notif_missions INTEGER DEFAULT 1,
+            notif_messages INTEGER DEFAULT 1, notif_ranking INTEGER DEFAULT 1,
+            notif_lives INTEGER DEFAULT 1, profile_visible INTEGER DEFAULT 1,
+            language TEXT DEFAULT 'fr', sounds INTEGER DEFAULT 1, animations INTEGER DEFAULT 1,
+            paypal_email TEXT, revolut_tag TEXT, mastercard_last4 TEXT
+        );
+        CREATE TABLE IF NOT EXISTS missions (
+            id TEXT PRIMARY KEY, owner_id TEXT, title TEXT NOT NULL, description TEXT,
+            category TEXT, budget REAL DEFAULT 0, status TEXT DEFAULT 'open',
+            latitude REAL, longitude REAL, address TEXT, remote INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS applications (
+            id TEXT PRIMARY KEY, mission_id TEXT, applicant_id TEXT, status TEXT DEFAULT 'pending',
+            message TEXT, created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS messages (
+            id TEXT PRIMARY KEY, conversation_id TEXT, sender_id TEXT, content TEXT,
+            created_at TEXT DEFAULT (datetime('now')), read_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS conversations (
+            id TEXT PRIMARY KEY, user1_id TEXT, user2_id TEXT,
+            created_at TEXT DEFAULT (datetime('now')), last_message_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS ratings (
+            id TEXT PRIMARY KEY, from_user_id TEXT, to_user_id TEXT, stars INTEGER,
+            comment TEXT, created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS transactions (
+            id TEXT PRIMARY KEY, user_id TEXT, type TEXT, amount REAL,
+            description TEXT, created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS badges (
+            id TEXT PRIMARY KEY, name TEXT, description TEXT, icon TEXT, color TEXT
+        );
+        CREATE TABLE IF NOT EXISTS user_badges (
+            user_id TEXT, badge_id TEXT, equipped INTEGER DEFAULT 0,
+            earned_at TEXT DEFAULT (datetime('now')), PRIMARY KEY(user_id, badge_id)
+        );
+        CREATE TABLE IF NOT EXISTS lives (
+            id TEXT PRIMARY KEY, host_id TEXT, title TEXT, status TEXT DEFAULT 'live',
+            viewers INTEGER DEFAULT 0, likes INTEGER DEFAULT 0,
+            started_at TEXT DEFAULT (datetime('now')), ended_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS live_likes (
+            live_id TEXT, user_id TEXT, PRIMARY KEY(live_id, user_id)
+        );
+        CREATE TABLE IF NOT EXISTS notifications (
+            id TEXT PRIMARY KEY, user_id TEXT, type TEXT, content TEXT,
+            read INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS admin_logs (
+            id TEXT PRIMARY KEY, admin_id TEXT, action TEXT, target_type TEXT,
+            target_id TEXT, details TEXT, created_at TEXT DEFAULT (datetime('now'))
+        );
+    """)
+    db.commit()
+    db.close()
+
+init_db()
