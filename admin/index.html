@@ -309,8 +309,9 @@ async function login() {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ email, password: pass })
     });
-    const d = await r.json();
-    if (!d.ok || !d.user.is_admin) {
+    const raw = await r.json();
+    const d = raw.success !== undefined ? { ok: raw.success, ...raw, ...(raw.data || {}) } : raw;
+    if (!d.ok || d.user.role !== 'admin') {
       document.getElementById('l-err').style.display = 'block';
       document.getElementById('l-err').textContent = d.error || 'Accès refusé';
       return;
@@ -338,7 +339,11 @@ async function api(path, method='GET', body=null) {
   const opts = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type':'application/json' } };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(`${API}${path}`, opts);
-  return r.json();
+  const raw = await r.json();
+  if (raw.success !== undefined) {
+    return { ok: raw.success, ...raw, ...(raw.data || {}) };
+  }
+  return raw;
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────
