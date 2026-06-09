@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 import bcrypt
 import jwt
-from flask import Flask, request, jsonify, g, send_file
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
@@ -883,10 +883,6 @@ def server_error(e):
     return jsonify({"error": "Erreur serveur interne", "detail": str(e)}), 500
 
 # ─── MAIN ─────────────────────────────────────────────────────────────────────
-@app.get("/admin")
-@app.get("/admin/")
-def admin_panel():
-    return send_file(os.path.join(BASE_DIR, "admin/index.html"))
 if __name__ == "__main__":
     print(f"""
 ╔══════════════════════════════════════════════╗
@@ -898,7 +894,28 @@ if __name__ == "__main__":
 
 
 # ─── INIT DB AUTO ─────────────────────────────────────────────────────────────
-def init_db():
+def init_db()
+
+# ─── CREATE ADMIN AUTO ────────────────────────────────────────────────────────
+def create_admin():
+    import os
+    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@jobquest.app')
+    admin_password = os.environ.get('ADMIN_PASSWORD', 'JobQuest2026')
+    db = sqlite3.connect(DB_PATH)
+    existing = db.execute('SELECT id FROM users WHERE email=?', (admin_email,)).fetchone()
+    if not existing:
+        uid = 'usr_' + uuid.uuid4().hex[:16]
+        pw_hash = bcrypt.hashpw(admin_password.encode(), bcrypt.gensalt()).decode()
+        db.execute('INSERT INTO users(id,username,email,password_hash,role) VALUES(?,?,?,?,?)',
+                   (uid, 'Admin', admin_email, pw_hash, 'admin'))
+        db.execute('INSERT INTO user_settings(user_id) VALUES(?)', (uid,))
+        db.commit()
+        print(f'Admin cree: {admin_email}')
+    else:
+        print(f'Admin existe deja: {admin_email}')
+    db.close()
+
+create_admin():
     db = sqlite3.connect(DB_PATH)
     db.execute("PRAGMA journal_mode=WAL")
     db.execute("PRAGMA foreign_keys=ON")
