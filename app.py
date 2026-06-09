@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 import bcrypt
 import jwt
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, send_file
 from flask_cors import CORS
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
@@ -883,6 +883,10 @@ def server_error(e):
     return jsonify({"error": "Erreur serveur interne", "detail": str(e)}), 500
 
 # ─── MAIN ─────────────────────────────────────────────────────────────────────
+@app.get("/admin")
+@app.get("/admin/")
+def admin_panel():
+    return send_file(os.path.join(BASE_DIR, "admin/index.html"))
 if __name__ == "__main__":
     print(f"""
 ╔══════════════════════════════════════════════╗
